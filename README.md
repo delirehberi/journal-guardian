@@ -1,5 +1,48 @@
 # Log Watcher
 
+Log Watcher is a tool that monitors `journalctl` logs and uses a local Ollama instance to suggest fixes for errors.
+
+## Installation
+
+### Debian / Ubuntu
+
+1. Download the latest `.deb` package from the [Releases](https://github.com/delirehberi/log_watcher/releases) page.
+2. Install the package:
+   ```bash
+   sudo dpkg -i log_watcher_*.deb
+   sudo apt-get install -f # Fix dependencies if needed
+   ```
+
+### Nix
+
+```bash
+nix build .#deb
+```
+
+## Usage
+
+### Systemd Service
+
+The package includes a systemd user service. To enable and start it:
+
+```bash
+systemctl --user enable --now log_watcher
+```
+
+Check the status:
+
+```bash
+systemctl --user status log_watcher
+```
+
+### Configuration
+
+The application uses environment variables for configuration. You can create a `~/.config/log_watcher/.env` file or set variables in the systemd service override.
+
+Defaults:
+- `OLLAMA_URL`: `http://localhost:11434/api/generate`
+- `MODEL`: `gpt-oss:20b` (or whatever you configure)
+
 A Go application that watches the system journal for errors and asks Ollama for fix suggestions, displaying them via desktop notifications.
 
 ## Prerequisites

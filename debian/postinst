@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "configure" ]; then
+    # Reload systemd user daemon if possible, though this usually requires user interaction
+    # For now, we just inform the user or reload global if it was a system service
+    :
+fi

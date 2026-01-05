@@ -1,0 +1,9 @@
+Package: log-watcher
+Version: 0.1.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: libnotify-bin
+Maintainer: delirehberi <z@emre.xyz>
+Description: Log Watcher application that suggests fixes via Ollama
+ Monitor journalctl logs and get fix suggestions from a local Ollama instance.

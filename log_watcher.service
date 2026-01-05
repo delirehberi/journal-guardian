@@ -1,0 +1,15 @@
+[Unit]
+Description=Log Watcher with Ollama Integration
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/log_watcher
+# Load environment variables from a config file if needed, or set defaults
+# We assume the binary handles defaults, but users can override via EnvironmentFile
+EnvironmentFile=-/etc/default/log_watcher
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,34 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v25
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Update Version in flake.nix
+        run: |
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          sed -i "s/version = \".*\";/version = \"$TAG_VERSION\";/" flake.nix
+
+      - name: Build Deb Package
+        run: nix build .#deb
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: result/*.deb
+          generate_release_notes: true
