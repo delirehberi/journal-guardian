@@ -95,3 +95,7 @@ Trigger an error (e.g., using `logger`) to test the watcher:
 ```bash
 logger -p user.err "This is a test error for log watcher"
 ```
+
+## Disclaimer
+
+This tool is co-developed with the assistance of AI. Please review the generated suggestions carefully before applying any fixes to your system.
