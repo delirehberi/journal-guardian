@@ -30,7 +30,7 @@
 
         packages.default = pkgs.buildGoModule {
           pname = "log_watcher";
-          version = "0.1.0";
+          version = "1.0.0";
           src = ./.;
           vendorHash = null; # No dependencies yet
           
