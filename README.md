@@ -1,3 +1,5 @@
+[![Release](https://github.com/delirehberi/journal-guardian/actions/workflows/release.yml/badge.svg?event=release)](https://github.com/delirehberi/journal-guardian/actions/workflows/release.yml)
+
 # Log Watcher
 
 Log Watcher is a tool that monitors `journalctl` logs and uses a local Ollama instance to suggest fixes for errors.
