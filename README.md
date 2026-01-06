@@ -39,9 +39,14 @@ systemctl --user status log_watcher
 
 The application uses environment variables for configuration. You can create a `~/.config/log_watcher/.env` file or set variables in the systemd service override.
 
-Defaults:
-- `OLLAMA_URL`: `http://localhost:11434/api/generate`
-- `MODEL`: `gpt-oss:20b` (or whatever you configure)
+### Variables
+
+- `LLM_PROVIDER`: Select the backend provider. Options: `ollama` (default), `openai`, `gemini`, `claude`.
+- `MODEL`: The model name to use (e.g., `gpt-4o`, `gemini-pro`, `claude-3-opus`).
+- `OLLAMA_URL`: URL for Ollama (default: `http://localhost:11434/api/generate`).
+- `OPENAI_API_KEY`: Required if provider is `openai`.
+- `GEMINI_API_KEY`: Required if provider is `gemini`.
+- `ANTHROPIC_API_KEY`: Required if provider is `claude`.
 
 A Go application that watches the system journal for errors and asks Ollama for fix suggestions, displaying them via desktop notifications.
 
