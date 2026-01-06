@@ -18,8 +18,9 @@
             gopls
             gotools
             go-tools
-            libnotify
-            dpkg
+          ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+            pkgs.libnotify
+            pkgs.dpkg
           ];
           
           shellHook = ''
@@ -34,7 +35,7 @@
           src = ./.;
           vendorHash = null; # No dependencies yet
           
-          nativeBuildInputs = [ pkgs.libnotify ];
+          nativeBuildInputs = pkgs.lib.optionals pkgs.stdenv.isLinux [ pkgs.libnotify ];
         };
 
         packages.deb = pkgs.stdenv.mkDerivation {

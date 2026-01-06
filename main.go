@@ -1,65 +1,78 @@
 package main
 
 import (
-	"bufio"
-	"encoding/json"
 	"fmt"
+	"log_watcher/pkg/notifier"
 	"log_watcher/pkg/providers"
+	"log_watcher/pkg/watcher"
 	"os"
-	"os/exec"
+	"os/signal"
+	"runtime"
+	"syscall"
 )
 
-// Structures for JSON parsing
-type JournalEntry struct {
-	Message    string `json:"MESSAGE"`
-	SystemUnit string `json:"_SYSTEMD_UNIT"`
-}
-
-func sendNotification(title, message string) {
-	if message == "" {
-		return
-	}
-	cmd := exec.Command("notify-send", title, message)
-	if err := cmd.Run(); err != nil {
-		fmt.Printf("Error sending notification: %v\n", err)
-	}
-}
-
 func main() {
+	// 1. Initialize LLM Provider
 	provider, err := providers.NewProvider()
 	if err != nil {
 		fmt.Printf("Error initializing provider: %v\n", err)
 		os.Exit(1)
 	}
-
 	fmt.Printf("[*] Go Journal Watcher started using %s\n", provider.Name())
 
-	cmd := exec.Command("journalctl", "-f", "-p", "3", "-o", "json", "-n", "0")
-	stdout, err := cmd.StdoutPipe()
+	// 2. Initialize Watcher & Notifier based on OS
+	var logWatcher watcher.LogWatcher
+	var notify notifier.Notifier
+
+	switch runtime.GOOS {
+	case "linux":
+		logWatcher = watcher.NewLinuxJournalWatcher()
+		notify = notifier.NewLinuxNotifier()
+	case "darwin":
+		logWatcher = watcher.NewMacOSLogWatcher()
+		notify = notifier.NewMacOSNotifier()
+	default:
+		fmt.Printf("Unsupported OS: %s\n", runtime.GOOS)
+		os.Exit(1)
+	}
+
+	// 3. Start Watching
+	logs, errs, err := logWatcher.Start()
 	if err != nil {
-		panic(err)
+		fmt.Printf("Error starting watcher: %v\n", err)
+		os.Exit(1)
 	}
+	defer logWatcher.Stop()
 
-	if err := cmd.Start(); err != nil {
-		panic(err)
-	}
+	// Handle graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	scanner := bufio.NewScanner(stdout)
-	for scanner.Scan() {
-		line := scanner.Bytes()
-		var entry JournalEntry
+	fmt.Println("[*] Watching logs...")
 
-		// Attempt to parse JSON line
-		if err := json.Unmarshal(line, &entry); err == nil {
-			// Filter out empty messages
-			if entry.Message == "" {
-				continue
+	go func() {
+		<-sigChan
+		fmt.Println("\n[*] Shutting down...")
+		logWatcher.Stop()
+		os.Exit(0)
+	}()
+
+	// 4. Process Logs
+	for {
+		select {
+		case err := <-errs:
+			if err != nil {
+				fmt.Printf("Watcher error: %v\n", err)
 			}
-
-			fmt.Printf("\n[!] Error in %s:\n    %s\n", entry.SystemUnit, entry.Message)
+		case entry, ok := <-logs:
+			if !ok {
+				return
+			}
+			
+			fmt.Printf("\n[!] Error in %s:\n    %s\n", entry.ServiceName, entry.Message)
 			fmt.Println("    Asking AI...")
 
-			suggestion, err := provider.Generate(fmt.Sprintf("Service: %s. Log: %s", entry.SystemUnit, entry.Message))
+			suggestion, err := provider.Generate(fmt.Sprintf("Service: %s. Log: %s", entry.ServiceName, entry.Message))
 			if err != nil {
 				fmt.Printf("Error generating suggestion: %v\n", err)
 				continue
@@ -67,7 +80,9 @@ func main() {
 
 			fmt.Printf("\n--- 💡 FIX SUGGESTION ---\n%s\n---------------------\n", suggestion)
 
-			sendNotification(fmt.Sprintf("Error: %s", entry.SystemUnit), suggestion)
+			if err := notify.Send(fmt.Sprintf("Error: %s", entry.ServiceName), suggestion); err != nil {
+				fmt.Printf("Error sending notification: %v\n", err)
+			}
 		}
 	}
 }

@@ -6,10 +6,21 @@ on:
       - 'v*'
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            output: .#deb
+            asset_path: result/*.deb
+            pkg_name: debian-package
+          - os: macos-latest
+            output: .#default
+            asset_path: result/bin/log_watcher
+            pkg_name: macos-binary
+
+    runs-on: ${{ matrix.os }}
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,15 +31,60 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
 
       - name: Update Version in flake.nix
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           TAG_VERSION=${GITHUB_REF#refs/tags/v}
-          sed -i "s/version = \".*\";/version = \"$TAG_VERSION\";/" flake.nix
+          sed -i.bak "s/version = \".*\";/version = \"$TAG_VERSION\";/" flake.nix
 
-      - name: Build Deb Package
-        run: nix build .#deb
+      - name: Build
+        run: nix build ${{ matrix.output }}
+
+      # For macOS, we might want to tar the binary
+      - name: Package macOS Binary
+        if: matrix.os == 'macos-latest'
+        run: |
+          mkdir -p dist
+          cp result/bin/log_watcher dist/
+          tar -czvf log_watcher_darwin_amd64.tar.gz -C dist log_watcher
+
+      # For Linux Deb
+      - name: Prepare Linux Artifact
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mkdir -p dist
+          cp result/*.deb dist/
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.pkg_name }}
+          path: |
+            dist/*.deb
+            *.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download Deb Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: debian-package
+          path: .
+
+      - name: Download macOS Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-binary
+          path: .
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: result/*.deb
+          files: |
+            *.deb
+            *.tar.gz
           generate_release_notes: true
