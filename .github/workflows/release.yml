@@ -68,6 +68,8 @@ jobs:
           name: ${{ matrix.pkg_name }}
           path: |
             dist/*.deb
+            dist/*.rpm
+            dist/*.pkg.tar.zst
             *.tar.gz
 
   release:
