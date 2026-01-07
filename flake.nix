@@ -41,27 +41,48 @@
         packages.deb = pkgs.stdenv.mkDerivation {
           name = "log-watcher-deb";
           src = ./.;
-          
-          buildInputs = [ packages.default pkgs.dpkg ];
-          
+          buildInputs = [ packages.default pkgs.nfpm ];
           buildPhase = ''
-            mkdir -p deb/usr/bin
-            mkdir -p deb/DEBIAN
-            mkdir -p deb/usr/lib/systemd/user
-            
-            cp ${packages.default}/bin/log_watcher deb/usr/bin/
-            cp debian/control deb/DEBIAN/
-            cp debian/postinst deb/DEBIAN/
-            chmod 755 deb/DEBIAN/postinst
-            cp log_watcher.service deb/usr/lib/systemd/user/
-
-            # Update Version in control file
-            sed -i "s/Version: .*/Version: ${packages.default.version}/g" deb/DEBIAN/control
+            export VERSION="${packages.default.version}"
+            mkdir -p result/bin
+            cp ${packages.default}/bin/log_watcher result/bin/
+            nfpm pkg --packager deb --target .
           '';
-          
           installPhase = ''
             mkdir -p $out
-            dpkg-deb --build deb $out/log_watcher_${packages.default.version}_amd64.deb
+            cp *.deb $out/
+          '';
+        };
+
+        packages.rpm = pkgs.stdenv.mkDerivation {
+          name = "log-watcher-rpm";
+          src = ./.;
+          buildInputs = [ packages.default pkgs.nfpm ];
+          buildPhase = ''
+            export VERSION="${packages.default.version}"
+            mkdir -p result/bin
+            cp ${packages.default}/bin/log_watcher result/bin/
+            nfpm pkg --packager rpm --target .
+          '';
+          installPhase = ''
+            mkdir -p $out
+            cp *.rpm $out/
+          '';
+        };
+
+        packages.arch = pkgs.stdenv.mkDerivation {
+          name = "log-watcher-arch";
+          src = ./.;
+          buildInputs = [ packages.default pkgs.nfpm ];
+          buildPhase = ''
+            export VERSION="${packages.default.version}"
+            mkdir -p result/bin
+            cp ${packages.default}/bin/log_watcher result/bin/
+            nfpm pkg --packager archlinux --target .
+          '';
+          installPhase = ''
+            mkdir -p $out
+            cp *.pkg.tar.zst $out/
           '';
         };
       }

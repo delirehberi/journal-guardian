@@ -1,0 +1,30 @@
+name: "log_watcher"
+arch: "amd64"
+platform: "linux"
+version: "${VERSION}"
+release: "1"
+section: "utils"
+priority: "optional"
+maintainer: "delirehberi <z@emre.xyz>"
+description: "Log Watcher application that suggests fixes via Ollama"
+vendor: "delirehberi"
+homepage: "https://github.com/delirehberi/journal-guardian"
+license: "MIT"
+
+contents:
+  - src: ./result/bin/log_watcher
+    dst: /usr/bin/log_watcher
+  - src: ./log_watcher.service
+    dst: /usr/lib/systemd/user/log_watcher.service
+    type: config
+
+depends:
+  - libnotify-bin
+
+overrides:
+  rpm:
+    depends:
+      - libnotify
+  archlinux:
+    depends:
+      - libnotify

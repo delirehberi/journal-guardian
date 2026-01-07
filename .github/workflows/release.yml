@@ -11,9 +11,12 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            output: .#deb
-            asset_path: result/*.deb
-            pkg_name: debian-package
+            output: .#deb .#rpm .#arch
+            asset_path: |
+              result-1/*.deb
+              result-2/*.rpm
+              result-3/*.pkg.tar.zst
+            pkg_name: linux-packages
           - os: macos-latest
             output: .#default
             asset_path: result/bin/log_watcher
@@ -45,12 +48,19 @@ jobs:
           cp result/bin/log_watcher dist/
           tar -czvf log_watcher_darwin_amd64.tar.gz -C dist log_watcher
 
-      # For Linux Deb
-      - name: Prepare Linux Artifact
+      # For Linux Packages
+      - name: Prepare Linux Artifacts
         if: matrix.os == 'ubuntu-latest'
         run: |
           mkdir -p dist
-          cp result/*.deb dist/
+          cp result/*.deb dist/ || true
+          cp result-1/*.rpm dist/ || true
+          cp result-2/*.pkg.tar.zst dist/ || true
+          # Nix might name them result, result-1 depending on order. 
+          # To be safe given the order .#deb .#rpm .#arch:
+          # result -> deb
+          # result-1 -> rpm
+          # result-2 -> arch
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -67,10 +77,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download Deb Artifact
+      - name: Download Linux Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: debian-package
+          name: linux-packages
           path: .
 
       - name: Download macOS Artifact
@@ -84,5 +94,7 @@ jobs:
         with:
           files: |
             **/*.deb
+            **/*.rpm
+            **/*.pkg.tar.zst
             *.tar.gz
           generate_release_notes: true
