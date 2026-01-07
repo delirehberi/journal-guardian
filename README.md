@@ -1,93 +1,58 @@
 [![Release](https://github.com/delirehberi/journal-guardian/actions/workflows/release.yml/badge.svg?event=release)](https://github.com/delirehberi/journal-guardian/actions/workflows/release.yml)
 
-# Log Watcher
+# Log Watcher / Journal Guardian
 
-Log Watcher is a tool that monitors `journalctl` logs and uses a local Ollama instance to suggest fixes for errors.
+Log Watcher is a cross-platform tool that monitors system logs (`journalctl` on Linux, `log stream` on macOS) and uses LLMs (Ollama, OpenAI, Gemini, Claude) to automatically suggest fixes for system errors.
+
+## Features
+
+- **Cross-Platform**: Works on Linux (Systemd) and macOS (Unified Logging System).
+- **Multi-Provider**: Support for Ollama (local), OpenAI, Google Gemini, and Anthropic Claude.
+- **Smart Notifications**: Sends desktop notifications with AI-generated fix suggestions when errors are detected.
 
 ## Installation
 
-### Debian / Ubuntu
+### Linux (Debian/Ubuntu)
 
-1. Download the latest `.deb` package from the [Releases](https://github.com/delirehberi/log_watcher/releases) page.
+1. Download the latest `.deb` package from the [Releases](https://github.com/delirehberi/journal-guardian/releases) page.
 2. Install the package:
    ```bash
    sudo dpkg -i log_watcher_*.deb
    sudo apt-get install -f # Fix dependencies if needed
    ```
 
-### Nix
+### macOS
+
+1. Download the `log_watcher_darwin_*.tar.gz` for your architecture (amd64 for Intel, arm64 for Apple Silicon) from the [Releases](https://github.com/delirehberi/journal-guardian/releases) page.
+2. Extract and run:
+   ```bash
+   tar -xzvf log_watcher_darwin_*.tar.gz
+   cd log_watcher
+   ./log_watcher
+   ```
+   *(Optional) You can add it to your PATH or create a LaunchAgent for background execution.*
+
+### From Source (Nix)
+
+If you have [Nix](https://nixos.org/) installed:
 
 ```bash
-nix build .#deb
+nix build .
+./result/bin/log_watcher
 ```
-
-## Usage
-
-### Systemd Service
-
-The package includes a systemd user service. To enable and start it:
-
-```bash
-systemctl --user enable --now log_watcher
-```
-
-Check the status:
-
-```bash
-systemctl --user status log_watcher
-```
-
-### Configuration
-
-The application uses environment variables for configuration. You can create a `~/.config/log_watcher/.env` file or set variables in the systemd service override.
-
-### Variables
-
-- `LLM_PROVIDER`: Select the backend provider. Options: `ollama` (default), `openai`, `gemini`, `claude`.
-- `MODEL`: The model name to use (e.g., `gpt-4o`, `gemini-pro`, `claude-3-opus`).
-- `OLLAMA_URL`: URL for Ollama (default: `http://localhost:11434/api/generate`).
-- `OPENAI_API_KEY`: Required if provider is `openai`.
-- `GEMINI_API_KEY`: Required if provider is `gemini`.
-- `ANTHROPIC_API_KEY`: Required if provider is `claude`.
-
-A Go application that watches the system journal for errors and asks Ollama for fix suggestions, displaying them via desktop notifications.
-
-## Prerequisites
-
--   Go 1.22+
--   `libnotify` (for notifications)
--   Ollama (running locally)
 
 ## Configuration
 
-The application is configured via environment variables:
+The application is configured via environment variables. You can set these in your shell or use a `.env` file if running manually.
 
 | Variable | Description | Default |
 | :--- | :--- | :--- |
-| `OLLAMA_URL` | URL of the Ollama API | `http://localhost:11434/api/generate` |
-| `MODEL` | Name of the Ollama model to use | `llama3` |
-
-## Build and Run
-
-### Using Go
-
-```bash
-# Build
-make build
-
-# Run
-make run
-```
-
-### Using Nix
-
-```bash
-# Enter development shell
-make nix-shell
-
-# Build package
-make nix-build
-```
+| `LLM_PROVIDER` | Backend provider: `ollama`, `openai`, `gemini`, `claude` | `ollama` |
+| `MODEL` | Model name (e.g., `gpt-4`, `llama3`, `gemini-pro`) | `llama3` |
+| `OLLAMA_URL` | URL for Ollama API | `http://localhost:11434/api/generate` |
+| `OPENAI_API_KEY` | API Key for OpenAI | - |
+| `GEMINI_API_KEY` | API Key for Google Gemini | - |
+| `ANTHROPIC_API_KEY` | API Key for Anthropic Claude | - |
 
 ## Usage
 
@@ -97,12 +62,50 @@ Start the application:
 ./log_watcher
 ```
 
-Trigger an error (e.g., using `logger`) to test the watcher:
+### Testing
 
+**Linux:**
 ```bash
 logger -p user.err "This is a test error for log watcher"
 ```
 
+**macOS:**
+```bash
+log write "This is a test error for log watcher" --level error
+```
+
+The tool should detect the error, query the configured LLM, and send a desktop notification with a suggestion.
+
+## Systemd Service (Linux)
+
+The Debian package installs a user-level systemd service.
+
+```bash
+systemctl --user enable --now log_watcher
+systemctl --user status log_watcher
+```
+
+## Development
+
+### Prerequisites
+
+- Go 1.22+
+- Nix (optional, for reproducible builds)
+- `libnotify` (Linux only)
+
+### Build Commands
+
+```bash
+# Standard Go Build
+make build
+
+# Nix Build
+make nix-build
+
+# Enter Nix Shell
+make nix-shell
+```
+
 ## Disclaimer
 
-This tool is co-developed with the assistance of AI. Please review the generated suggestions carefully before applying any fixes to your system.
+This tool uses AI to generate system administration suggestions. **Always review the suggestions carefully before running any commands.** The developers are not responsible for any damage caused by applying AI-generated fixes.
