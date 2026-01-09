@@ -2,3 +2,4 @@ result
 .env
 .direnv
 result*
+config.json

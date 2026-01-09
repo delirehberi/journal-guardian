@@ -8,6 +8,7 @@ Log Watcher is a cross-platform tool that monitors system logs (`journalctl` on 
 
 - **Cross-Platform**: Works on Linux (Systemd) and macOS (Unified Logging System).
 - **Multi-Provider**: Support for Ollama (local), OpenAI, Google Gemini, and Anthropic Claude.
+- **Configurable Sources**: Monitor multiple log files, journalctl, or macOS logs simultaneously.
 - **Smart Notifications**: Sends desktop notifications with AI-generated fix suggestions when errors are detected.
 
 ## Installation
@@ -53,6 +54,43 @@ The application is configured via environment variables. You can set these in yo
 | `OPENAI_API_KEY` | API Key for OpenAI | - |
 | `GEMINI_API_KEY` | API Key for Google Gemini | - |
 | `ANTHROPIC_API_KEY` | API Key for Anthropic Claude | - |
+| `GEMINI_API_KEY` | API Key for Google Gemini | - |
+| `ANTHROPIC_API_KEY` | API Key for Anthropic Claude | - |
+
+### Configuration File (Optional)
+
+You can specify log sources in a `config.json` file. The application searches for this file in the following order:
+1. Current directory: `./config.json`
+2. User config directory:
+   - Linux: `~/.config/log_watcher/config.json`
+   - macOS: `~/Library/Application Support/log_watcher/config.json`
+3. System config directory: `/etc/log_watcher/config.json`
+
+**Example `config.json`:**
+```json
+{
+  "sources": [
+    {
+      "type": "journalctl",
+      "params": {}
+    },
+    {
+      "type": "file",
+      "params": {
+        "path": "/var/log/nginx/error.log"
+      }
+    },
+    {
+      "type": "file",
+      "params": {
+        "path": "/home/user/app.log"
+      }
+    }
+  ]
+}
+```
+
+If no configuration file is found, the application falls back to the default OS behavior (monitoring `journalctl` on Linux or Unified Logger on macOS).
 
 ## Usage
 

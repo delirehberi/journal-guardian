@@ -1,0 +1,10 @@
+{
+    "sources": [
+        {
+            "type": "file",
+            "params": {
+                "path": "/home/delirehberi/www/log_watcher/test.log"
+            }
+        }
+    ]
+}
